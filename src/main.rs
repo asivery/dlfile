@@ -1,4 +1,4 @@
-use std::{fs::File, io::copy};
+use std::{fs::File, io::copy, io::stdout};
 
 use reqwest::blocking::Client;
 use url::Url;
@@ -21,12 +21,15 @@ fn main() {
             .unwrap()
             .to_string()
     };
-    println!("Downloading '{}' to '{}'...", url, name);
+    eprintln!("Downloading '{}' to '{}'...", url, name);
     let mut response = Client::new().get(url).send().expect("Failed to fetch URL");
     if response.status().is_success() {
-        let mut file = File::create(name).unwrap();
-        copy(&mut response, &mut file).unwrap();
-        println!("Downloaded.");
+        if name == "-" {
+            copy(&mut response, &mut stdout().lock()).unwrap();
+        } else {
+            let mut file = File::create(name).unwrap();
+            copy(&mut response, &mut file).unwrap();
+        }
     } else {
         eprintln!("Failed to download: HTTP {}", response.status());
     }
